@@ -253,7 +253,6 @@
   }
   .btn-clear:hover{ border-color: var(--navy); color: var(--navy); }
 
-  /* seal stamp that appears once signed */
   .seal{
     position: absolute;
     right: 14px;
@@ -365,7 +364,7 @@
     <div class="letterhead-sub">수임자 : 풍무역 수자인 그라센트 2차 입주예정자 협의회</div>
   </div>
 
-  <form id="delegationForm">
+  <form id="delegationForm" novalidate>
     <div class="body-pad">
 
       <p class="intro">
@@ -380,14 +379,13 @@
         <div class="field-grid">
           <div class="field">
             <label>계약자 성명<span class="req">*</span></label>
-            <input type="text" name="name" id="nameInput" required placeholder="홍길동" pattern="^[가-힣]{2,5}$" title="한글 이름만 입력해 주세요 (예: 홍길동)" maxlength="5" autocomplete="off">
+            <input type="text" name="name" id="nameInput" required placeholder="홍길동" maxlength="5" autocomplete="off">
           </div>
           <div class="field">
             <label>생년월일<span class="req">*</span></label>
-            <input type="text" name="birth" id="birthInput" required placeholder="예) 850312" inputmode="numeric" pattern="^[0-9]{6}$" title="숫자 6자리로 입력해 주세요 (예: 850312)" maxlength="6" autocomplete="off">
+            <input type="text" name="birth" id="birthInput" required placeholder="예) 850312" inputmode="numeric" maxlength="6" autocomplete="off">
           </div>
           
-          <!-- 동 선택 드롭다운 (101동 ~ 107동) -->
           <div class="field">
             <label>동<span class="req">*</span></label>
             <select name="dong" id="dongSelect" required>
@@ -402,7 +400,6 @@
             </select>
           </div>
           
-          <!-- 호수 선택 드롭다운 -->
           <div class="field">
             <label>호수<span class="req">*</span></label>
             <select name="ho" id="hoSelect" required>
@@ -414,7 +411,7 @@
 
           <div class="field full">
             <label>연락처<span class="req">*</span></label>
-            <input type="tel" name="phone" id="phoneInput" required placeholder="01000000000" inputmode="numeric" pattern="^[0-9]{9,11}$" title="'-' 없이 숫자만 입력해 주세요 (예: 01000000000)" maxlength="11" autocomplete="off">
+            <input type="tel" name="phone" id="phoneInput" required placeholder="01000000000" inputmode="numeric" maxlength="11" autocomplete="off">
           </div>
           <div class="field">
             <label>카페 ID<span class="req">*</span></label>
@@ -503,15 +500,10 @@
 </div>
 
 <script>
-/* =======================================================
-   ⚙️ 이 부분만 배포한 Google Apps Script 웹앱 URL로 교체하세요
-   ======================================================= */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNUvAgg1X9LXhMhoXEDlCO-B5u5kXD4a8zo9PrC7QayCiTyJtDdMbLGRMuT_5Zw0XQ4Q/exec";
 
-/* ---------------- 동/호수 데이터 세팅 (이미지 배치도 정밀 검증) ---------------- */
 function generateBuildingData() {
   const data = {};
-
   function buildDong(config) {
     const units = [];
     for (let f = config.minFloor; f <= config.maxFloor; f++) {
@@ -523,86 +515,30 @@ function generateBuildingData() {
     return units;
   }
 
-  // 101동: 1~25층 (1~5라인)
-  // - 101호 제외 (필로티)
-  // - 23층~25층: 4호, 5호 제외 (2304~2505 없음)
   data['101동'] = buildDong({
     minFloor: 1, maxFloor: 25, maxLine: 5,
-    exclude: (f, line) => {
-      if (f === 1 && line === 1) return true;
-      if (f >= 24 && line >= 4) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && line === 1) || (f >= 24 && line >= 4)
   });
-
-  // 102동: 1~20층 (1~4라인)
-  // - 101호 제외 (필로티)
-  // - 20층: 3호, 4호 제외 (2003, 2004 없음)
   data['102동'] = buildDong({
     minFloor: 1, maxFloor: 20, maxLine: 4,
-    exclude: (f, line) => {
-      if (f === 1 && line === 1) return true;
-      if (f === 2 && line === 1) return true;
-      if (f === 20 && line >= 3) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && line === 1) || (f === 2 && line === 1) || (f === 20 && line >= 3)
   });
-
-  // 103동: 1~15층 (1~2라인)
-  // - 101호 제외 (필로티)
   data['103동'] = buildDong({
     minFloor: 1, maxFloor: 15, maxLine: 2,
-    exclude: (f, line) => {
-      if (f === 1 && line === 1) return true;
-      if (f === 2 && line === 1) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && line === 1) || (f === 2 && line === 1)
   });
-
-  // 104동: 1~13층 (1~2라인) - 전 층 1, 2호 완비
-  data['104동'] = buildDong({
-    minFloor: 1, maxFloor: 13, maxLine: 2,
-    exclude: () => false
-  });
-
-  // 105동: 1~26층 (1~5라인)
-  // - 103호 제외 (필로티)
-  // - 23, 24, 25층: 4호, 5호 제외 (2304~2505 없음)
-  // - 26층: 1호, 4호, 5호 제외 (2602, 2603만 있음)
+  data['104동'] = buildDong({ minFloor: 1, maxFloor: 13, maxLine: 2 });
   data['105동'] = buildDong({
     minFloor: 1, maxFloor: 26, maxLine: 5,
-    exclude: (f, line) => {
-      if (f === 1 && line === 3) return true;
-      if (f >= 23 && f <= 25 && line >= 4) return true;
-      if (f === 26 && (line === 1 || line >= 4)) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && line === 3) || (f >= 23 && f <= 25 && line >= 4) || (f === 26 && (line === 1 || line >= 4))
   });
-
-  // 106동: 1~28층 (1~5라인)
-  // - 102호(필로티), 103호(경로당) 제외
-  // - 27층~28층: 1호, 4호, 5호 제외 (2702, 2703, 2802, 2803만 있음)
   data['106동'] = buildDong({
     minFloor: 1, maxFloor: 28, maxLine: 5,
-    exclude: (f, line) => {
-      if (f === 1 && (line === 2 || line === 3)) return true;
-      if (f >= 27 && (line === 1 || line >= 4)) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && (line === 2 || line === 3)) || (f >= 27 && (line === 1 || line >= 4))
   });
-
-  // 107동: 1~28층 (1~5라인)
-  // - 103호 제외 (필로티)
-  // - 27층: 1호 제외 (2702~2705만 있음)
-  // - 28층: 1호, 4호, 5호 제외 (2802, 2803만 있음)
   data['107동'] = buildDong({
     minFloor: 1, maxFloor: 28, maxLine: 5,
-    exclude: (f, line) => {
-      if (f === 1 && line === 3) return true;
-      if (f === 27 && line === 1) return true;
-      if (f === 28 && (line === 1 || line >= 4)) return true;
-      return false;
-    }
+    exclude: (f, line) => (f === 1 && line === 3) || (f === 27 && line === 1) || (f === 28 && (line === 1 || line >= 4))
   });
 
   return data;
@@ -610,7 +546,6 @@ function generateBuildingData() {
 
 const buildingData = generateBuildingData();
 
-/* ---------------- 동/호수 드롭다운 연결 ---------------- */
 const dongSelect = document.getElementById('dongSelect');
 const hoSelect = document.getElementById('hoSelect');
 
@@ -633,7 +568,6 @@ dongSelect.addEventListener('change', function() {
   });
 });
 
-/* ---------------- 동/호수 중복 접수 확인 ---------------- */
 const unitCheckMsg = document.getElementById('unitCheckMsg');
 let isDuplicateUnit = false;
 
@@ -674,31 +608,26 @@ async function checkUnitDuplicate(){
       showUnitCheckMsg('ok', `${dong} ${ho} 접수 가능합니다.`);
     }
   }catch(err){
-    // 확인 실패 시에는 조용히 넘어가고, 최종 제출 시 서버에서 다시 검증합니다.
     hideUnitCheckMsg();
   }
 }
 
 hoSelect.addEventListener('change', checkUnitDuplicate);
 
-/* ---------------- 입력값 실시간 필터링 (이름: 한글만 / 생년월일·연락처: 숫자만) ---------------- */
+/* 입력 완료(blur) 시에만 정리하여 모바일 조합 충돌 방지 */
 const nameInput = document.getElementById('nameInput');
 const birthInput = document.getElementById('birthInput');
 const phoneInput = document.getElementById('phoneInput');
 
 nameInput.addEventListener('blur', function(){
-  // 타이핑 도중(특히 모바일 한글 조합 중)에는 건드리지 않고,
-  // 입력을 마치고 다른 곳으로 포커스가 이동했을 때만 한글 완성형 외 문자를 제거
   this.value = this.value.replace(/[^가-힣]/g, '');
 });
 
-birthInput.addEventListener('input', function(){
-  // 숫자만 허용
+birthInput.addEventListener('blur', function(){
   this.value = this.value.replace(/[^0-9]/g, '');
 });
 
-phoneInput.addEventListener('input', function(){
-  // 숫자만 허용 (하이픈 등 자동 제거)
+phoneInput.addEventListener('blur', function(){
   this.value = this.value.replace(/[^0-9]/g, '');
 });
 
@@ -731,7 +660,7 @@ resizeCanvas();
 
 function getPos(e){
   const rect = canvas.getBoundingClientRect();
-  if(e.touches && e.touches.length){
+  if(e.touches && e.touches.length > 0){
     return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
   }
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -744,15 +673,15 @@ function start(e){
   const p = getPos(e);
   ctx.beginPath();
   ctx.moveTo(p.x, p.y);
-  e.preventDefault();
 }
+
 function move(e){
   if(!drawing) return;
   const p = getPos(e);
   ctx.lineTo(p.x, p.y);
   ctx.stroke();
-  e.preventDefault();
 }
+
 function end(){
   if(!drawing) return;
   drawing = false;
@@ -762,8 +691,17 @@ function end(){
 canvas.addEventListener('mousedown', start);
 canvas.addEventListener('mousemove', move);
 window.addEventListener('mouseup', end);
-canvas.addEventListener('touchstart', start, { passive:false });
-canvas.addEventListener('touchmove', move, { passive:false });
+
+canvas.addEventListener('touchstart', (e) => {
+  start(e);
+  if (e.target === canvas) e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  move(e);
+  if (e.target === canvas) e.preventDefault();
+}, { passive: false });
+
 canvas.addEventListener('touchend', end);
 
 document.getElementById('clearSig').addEventListener('click', () => {
@@ -774,7 +712,6 @@ document.getElementById('clearSig').addEventListener('click', () => {
   sealMark.classList.remove('show');
 });
 
-/* 서명 캔버스의 빈 여백을 잘라내고, 실제 서명 부분만 이미지로 반환 */
 function getTrimmedSignatureDataUrl(){
   const w = canvas.width, h = canvas.height;
   const imgData = ctx.getImageData(0, 0, w, h).data;
@@ -818,27 +755,50 @@ form.addEventListener('submit', async function(e){
   statusMsg.className = 'status';
   statusMsg.textContent = '';
 
-  if(!hasSignature){
+  const nameVal = form.name.value.trim().replace(/[^가-힣]/g, '');
+  const birthVal = form.birth.value.trim().replace(/[^0-9]/g, '');
+  const phoneVal = form.phone.value.trim().replace(/[^0-9]/g, '');
+
+  if(!nameVal || !/^[가-힣]{2,5}$/.test(nameVal)){
     statusMsg.className = 'status err';
-    statusMsg.textContent = '서명을 입력해 주세요.';
-    return;
-  }
-  if(!/^[가-힣]{2,5}$/.test(form.name.value.trim())){
-    statusMsg.className = 'status err';
-    statusMsg.textContent = '계약자 성명을 한글로 정확히 입력해 주세요.';
+    statusMsg.textContent = '계약자 성명을 한글로 정확히 입력해 주세요 (2~5자).';
     form.name.focus();
     return;
   }
-  if(!/^[0-9]{6}$/.test(form.birth.value.trim())){
+  if(!birthVal || !/^[0-9]{6}$/.test(birthVal)){
     statusMsg.className = 'status err';
     statusMsg.textContent = '생년월일을 숫자 6자리로 입력해 주세요. (예: 850312)';
     form.birth.focus();
     return;
   }
-  if(!/^[0-9]{9,11}$/.test(form.phone.value.trim())){
+  if(!form.dong.value){
+    statusMsg.className = 'status err';
+    statusMsg.textContent = '동을 선택해 주세요.';
+    form.dong.focus();
+    return;
+  }
+  if(!form.ho.value){
+    statusMsg.className = 'status err';
+    statusMsg.textContent = '호수를 선택해 주세요.';
+    form.ho.focus();
+    return;
+  }
+  if(!phoneVal || !/^[0-9]{9,11}$/.test(phoneVal)){
     statusMsg.className = 'status err';
     statusMsg.textContent = '연락처를 숫자만 입력해 주세요. (예: 01012345678)';
     form.phone.focus();
+    return;
+  }
+  if(!form.cafeId.value.trim()){
+    statusMsg.className = 'status err';
+    statusMsg.textContent = '카페 ID를 입력해 주세요.';
+    form.cafeId.focus();
+    return;
+  }
+  if(!form.cafeNick.value.trim()){
+    statusMsg.className = 'status err';
+    statusMsg.textContent = '카페 닉네임을 입력해 주세요.';
+    form.cafeNick.focus();
     return;
   }
   if(!document.getElementById('consentCheck').checked){
@@ -846,23 +806,23 @@ form.addEventListener('submit', async function(e){
     statusMsg.textContent = '개인정보 수집·이용·제공에 동의해 주세요.';
     return;
   }
+  if(!hasSignature){
+    statusMsg.className = 'status err';
+    statusMsg.textContent = '서명을 입력해 주세요.';
+    return;
+  }
   if(isDuplicateUnit){
     statusMsg.className = 'status err';
     statusMsg.textContent = '이미 접수된 동/호수입니다. 중복 접수는 불가합니다.';
     return;
   }
-  if(SCRIPT_URL.indexOf('script.google.com') === -1){
-    statusMsg.className = 'status err';
-    statusMsg.textContent = '⚠️ 관리자: SCRIPT_URL이 아직 설정되지 않았습니다.';
-    return;
-  }
 
   const data = {
-    name: form.name.value.trim().replace(/[^가-힣]/g, ''),
-    birth: form.birth.value.trim().replace(/[^0-9]/g, ''),
+    name: nameVal,
+    birth: birthVal,
     dong: form.dong.value,
     ho: form.ho.value,
-    phone: form.phone.value.trim().replace(/[^0-9]/g, ''),
+    phone: phoneVal,
     cafeId: form.cafeId.value.trim(),
     cafeNick: form.cafeNick.value.trim(),
     consent: true,
